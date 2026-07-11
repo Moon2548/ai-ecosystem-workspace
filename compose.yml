@@ -16,5 +16,38 @@ services:
       timeout: 5s
       retries: 5
 
+  # 1.b เพิ่ม PostgreSQL Database service
+  postgres:
+    image: postgres:15
+    container_name: postgresql
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=labelstudio
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data # 1.a ใช้ Volume แยกชื่อ postgresql-data
+
+  # 2.b เพิ่ม Label Studio service
+  label-studio:
+    image: heartexlabs/label-studio:latest
+    container_name: label-studio
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # 2.a เชื่อมต่อใช้งาน Label Studio กับ PostgreSQL
+      - DJANGO_DB=default
+      - POSTGRE_NAME=labelstudio
+      - POSTGRE_USER=myuser
+      - POSTGRE_PASSWORD=mypassword
+      - POSTGRE_PORT=5432
+      - POSTGRE_HOST=postgres
+    depends_on:
+      - postgres
+
 volumes:
   redis-data:
+  postgresql-data: # 1.a กำหนด Volume
