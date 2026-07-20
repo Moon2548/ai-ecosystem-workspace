@@ -1,1 +1,4 @@
 .venv/
+sandbox/
+__pycache__/
+*.pyc
