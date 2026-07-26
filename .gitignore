@@ -1,4 +1,5 @@
 .venv/
 sandbox/
 __pycache__/
-*.pyc
+*.pyclogs/
+logs/

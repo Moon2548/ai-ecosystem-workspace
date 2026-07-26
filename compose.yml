@@ -9,12 +9,17 @@ services:
       - redis-data:/data
     command: >
       redis-server
-      --appendonly yes
+      --appendonly yes | tee /data/redis.log
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # 1.b เพิ่ม PostgreSQL Database service
   postgres:
@@ -29,6 +34,11 @@ services:
       - "5433:5432"
     volumes:
       - postgresql-data:/var/lib/postgresql/data # 1.a ใช้ Volume แยกชื่อ postgresql-data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # 2.b เพิ่ม Label Studio service
   label-studio:
@@ -47,6 +57,11 @@ services:
       - POSTGRE_HOST=postgres
     depends_on:
       - postgres
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # 3.b เพิ่ม MinIO service สำหรับ Object Storage
   minio:
@@ -67,6 +82,11 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   redis-data:
