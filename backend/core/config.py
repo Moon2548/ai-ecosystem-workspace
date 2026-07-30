@@ -1,13 +1,24 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-class Settings(BaseSettings):
-    APP_NAME: str = "Backend API"
-    DEBUG_MODE: bool = False
-    DATABASE_URL: str = "postgresql+asyncpg://myuser:mypassword@localhost:5433/labelstudio"
-    JWT_SECRET_KEY: str = "change-this-secret-before-production"
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENV_PATH = os.path.join(ROOT_DIR, ".env")
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+class Settings(BaseSettings):
+    """Application settings."""
+    # ระบุ env_file เป็น ENV_PATH แทนการใช้แค่ ".env"
+    APP_NAME: str = "FastAPI Application"
+    DEBUG_MODE: bool = True
+    model_config = SettingsConfigDict(env_file=ENV_PATH, env_file_encoding="utf-8")
+
+    database_url: str
+    label_studio_url: str
+    label_studio_api_key: str
+    minio_endpoint: str
+    minio_access_key: str
+    minio_secret_key: str
+    jwt_secret_key: str
+    jwt_algorithm: str
+    access_token_expire_minutes: int
 
 settings = Settings()
