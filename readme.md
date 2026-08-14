@@ -46,7 +46,6 @@ ai-ecosystem-workspace/
 │   │   ├── management/         # Management Channel (Admin)
 │   │   └── jobs/               # Job Worker (Training Jobs)
 │   └── scripts/                # Utility scripts
-└── report.docx                 # รายงานโปรเจกต์
 ```
 
 ## การติดตั้งและเริ่มต้นใช้งาน
