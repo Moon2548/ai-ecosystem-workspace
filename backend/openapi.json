@@ -1,0 +1,1566 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Ecosystem API",
+    "description": "\n## AI Ecosystem Workspace — Central API Server\n\nระบบ AI ครบวงจรที่รวมการจัดการ Machine Learning Pipeline\n\n### ส่วนประกอบหลัก:\n- **Inference Channel**: รับ prediction request จาก End user\n- **Management Channel**: Admin จัดการระบบ, Deploy models\n- **Job Worker**: สร้างและติดตาม Training Jobs ผ่าน Redis queue\n- **Authentication**: ระบบยืนยันตัวตนด้วย JWT\n\n### สถาปัตยกรรม: Feature-Driven Modular Architecture\nจัดกลุ่มโค้ดตาม Feature/Domain — แต่ละ feature มี router, controller, service, schema\n    ",
+    "contact": {
+      "name": "AI Ecosystem Team"
+    },
+    "license": {
+      "name": "MIT"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Register",
+        "operationId": "register_api_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Get Me",
+        "operationId": "get_me_api_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get All Users",
+        "operationId": "get_all_users_api_users_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Get All Users Api Users Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/users/{user_id}": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get User",
+        "operationId": "get_user_api_users__user_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update User",
+        "operationId": "update_user_api_users__user_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Delete User",
+        "operationId": "delete_user_api_users__user_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete User Api Users  User Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inference/predict": {
+      "post": {
+        "tags": [
+          "Inference Channel"
+        ],
+        "summary": "ส่งข้อมูลเพื่อ predict",
+        "description": "รับข้อมูล input จาก End user ส่งไปประมวลผลผ่าน model ใน Inference Channel",
+        "operationId": "predict_api_inference_predict_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PredictRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inference/models": {
+      "get": {
+        "tags": [
+          "Inference Channel"
+        ],
+        "summary": "แสดงรายการ Models ที่พร้อมใช้งาน",
+        "description": "Controller ดึงข้อมูล model ทั้งหมด",
+        "operationId": "list_models_api_inference_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inference/models/{model_name}": {
+      "get": {
+        "tags": [
+          "Inference Channel"
+        ],
+        "summary": "ดูรายละเอียด Model",
+        "description": "Controller ดึงข้อมูล model เฉพาะชื่อ",
+        "operationId": "get_model_info_api_inference_models__model_name__get",
+        "parameters": [
+          {
+            "name": "model_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelInfo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inference/health": {
+      "get": {
+        "tags": [
+          "Inference Channel"
+        ],
+        "summary": "ตรวจสอบสถานะ Inference Channel",
+        "description": "Controller ตรวจสอบสถานะ",
+        "operationId": "check_health_api_inference_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceHealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/management/dashboard": {
+      "get": {
+        "tags": [
+          "Management Channel"
+        ],
+        "summary": "แสดง Dashboard ข้อมูลระบบ",
+        "description": "แสดงสถานะภาพรวมของระบบ AI Ecosystem สำหรับ Admin",
+        "operationId": "get_dashboard_api_management_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/management/models": {
+      "get": {
+        "tags": [
+          "Management Channel"
+        ],
+        "summary": "แสดงรายการ Models ที่จัดการได้",
+        "description": "Controller สำหรับแสดงรายการ Models",
+        "operationId": "list_managed_models_api_management_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ModelManagementInfo"
+                  },
+                  "type": "array",
+                  "title": "Response List Managed Models Api Management Models Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/management/models/deploy": {
+      "post": {
+        "tags": [
+          "Management Channel"
+        ],
+        "summary": "Deploy Model เข้าสู่ระบบ",
+        "description": "Deploy model ที่เลือกเข้าสู่ระบบ inference สำหรับให้บริการ",
+        "operationId": "deploy_model_api_management_models_deploy_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelDeployRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDeployResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/management/models/{model_name}": {
+      "delete": {
+        "tags": [
+          "Management Channel"
+        ],
+        "summary": "ถอด Model ออกจากระบบ",
+        "description": "Controller สำหรับ Undeploy Model",
+        "operationId": "undeploy_model_api_management_models__model_name__delete",
+        "parameters": [
+          {
+            "name": "model_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Undeploy Model Api Management Models  Model Name  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs/training": {
+      "post": {
+        "tags": [
+          "Job Worker"
+        ],
+        "summary": "สร้าง Training Job ใหม่",
+        "description": "สร้าง training job และส่งเข้า Redis queue เพื่อให้ Training Worker ประมวลผล",
+        "operationId": "create_training_job_api_jobs_training_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingJobRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingJobResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Job Worker"
+        ],
+        "summary": "แสดงรายการ Training Jobs ทั้งหมด",
+        "operationId": "list_jobs_api_jobs_training_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs/training/{job_id}": {
+      "get": {
+        "tags": [
+          "Job Worker"
+        ],
+        "summary": "ดูสถานะ Training Job",
+        "description": "ตรวจสอบสถานะและ progress ของ training job ที่กำลังทำงาน",
+        "operationId": "get_job_status_api_jobs_training__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Job Worker"
+        ],
+        "summary": "ยกเลิก Training Job",
+        "operationId": "cancel_job_api_jobs_training__job_id__delete",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobCancelResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "System Health Check",
+        "description": "ตรวจสอบสถานะของ Central API Server",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Check Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DashboardResponse": {
+        "properties": {
+          "total_models": {
+            "type": "integer",
+            "title": "Total Models"
+          },
+          "total_jobs": {
+            "type": "integer",
+            "title": "Total Jobs"
+          },
+          "active_inferences": {
+            "type": "integer",
+            "title": "Active Inferences"
+          },
+          "system_services": {
+            "items": {
+              "$ref": "#/components/schemas/SystemStatus"
+            },
+            "type": "array",
+            "title": "System Services"
+          },
+          "last_updated": {
+            "type": "string",
+            "title": "Last Updated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_models",
+          "total_jobs",
+          "active_inferences",
+          "system_services",
+          "last_updated"
+        ],
+        "title": "DashboardResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InferenceHealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "available_models": {
+            "type": "integer",
+            "title": "Available Models"
+          },
+          "redis_connected": {
+            "type": "boolean",
+            "title": "Redis Connected"
+          },
+          "minio_connected": {
+            "type": "boolean",
+            "title": "Minio Connected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "available_models",
+          "redis_connected",
+          "minio_connected"
+        ],
+        "title": "InferenceHealthResponse",
+        "description": "Schema สถานะความพร้อมใช้งานของ Inference Channel"
+      },
+      "JobCancelResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "message"
+        ],
+        "title": "JobCancelResponse"
+      },
+      "JobListResponse": {
+        "properties": {
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/JobStatusResponse"
+            },
+            "type": "array",
+            "title": "Jobs"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobs",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "JobListResponse"
+      },
+      "JobStatusResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "progress_percent": {
+            "type": "number",
+            "title": "Progress Percent"
+          },
+          "current_epoch": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Epoch"
+          },
+          "total_epochs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Epochs"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "model_name",
+          "status",
+          "progress_percent",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "JobStatusResponse"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "ModelDeployRequest": {
+        "properties": {
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_name",
+          "version"
+        ],
+        "title": "ModelDeployRequest"
+      },
+      "ModelDeployResponse": {
+        "properties": {
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "deployed_at": {
+            "type": "string",
+            "title": "Deployed At"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_name",
+          "version",
+          "status",
+          "deployed_at",
+          "message"
+        ],
+        "title": "ModelDeployResponse"
+      },
+      "ModelInfo": {
+        "properties": {
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_name",
+          "version",
+          "status"
+        ],
+        "title": "ModelInfo",
+        "description": "Schema ข้อมูลของ Model"
+      },
+      "ModelListResponse": {
+        "properties": {
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelInfo"
+            },
+            "type": "array",
+            "title": "Models"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "models",
+          "total"
+        ],
+        "title": "ModelListResponse",
+        "description": "Schema รายการ Model ทั้งหมดที่ใช้งานได้"
+      },
+      "ModelManagementInfo": {
+        "properties": {
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "deployed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deployed At"
+          },
+          "size_mb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Mb"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_name",
+          "version",
+          "status"
+        ],
+        "title": "ModelManagementInfo"
+      },
+      "PredictRequest": {
+        "properties": {
+          "input_data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input Data"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name",
+            "default": "default"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input_data"
+        ],
+        "title": "PredictRequest",
+        "description": "Schema สำหรับรับข้อมูล predict จาก End User"
+      },
+      "PredictResponse": {
+        "properties": {
+          "prediction": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Prediction"
+          },
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "inference_time_ms": {
+            "type": "number",
+            "title": "Inference Time Ms"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prediction",
+          "model_name",
+          "inference_time_ms",
+          "request_id"
+        ],
+        "title": "PredictResponse",
+        "description": "Schema สำหรับส่งผลลัพธ์การ predict กลับไปยัง End User"
+      },
+      "RegisterRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "RegisterRequest"
+      },
+      "SystemStatus": {
+        "properties": {
+          "service_name": {
+            "type": "string",
+            "title": "Service Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "uptime_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uptime Seconds"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "service_name",
+          "status"
+        ],
+        "title": "SystemStatus"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "TokenResponse"
+      },
+      "TrainingJobRequest": {
+        "properties": {
+          "model_name": {
+            "type": "string",
+            "title": "Model Name",
+            "description": "ชื่อโมเดลที่ต้องการเทรน"
+          },
+          "dataset_name": {
+            "type": "string",
+            "title": "Dataset Name",
+            "description": "ชื่อ dataset ที่ใช้เทรน"
+          },
+          "epochs": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Epochs",
+            "description": "จำนวน epochs",
+            "default": 10
+          },
+          "batch_size": {
+            "type": "integer",
+            "maximum": 512.0,
+            "minimum": 1.0,
+            "title": "Batch Size",
+            "description": "ขนาด batch",
+            "default": 32
+          },
+          "learning_rate": {
+            "type": "number",
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Learning Rate",
+            "description": "Learning rate",
+            "default": 0.001
+          },
+          "config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config",
+            "description": "การตั้งค่าเพิ่มเติม"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "คำอธิบาย job"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_name",
+          "dataset_name"
+        ],
+        "title": "TrainingJobRequest"
+      },
+      "TrainingJobResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "dataset_name": {
+            "type": "string",
+            "title": "Dataset Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "model_name",
+          "dataset_name",
+          "status",
+          "created_at",
+          "message"
+        ],
+        "title": "TrainingJobResponse"
+      },
+      "UpdateUserRequest": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "title": "UpdateUserRequest"
+      },
+      "UserResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "created_at"
+        ],
+        "title": "UserResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "system",
+      "description": "System health check endpoints"
+    },
+    {
+      "name": "auth",
+      "description": "Authentication — ระบบยืนยันตัวตน (login, register, JWT token)"
+    },
+    {
+      "name": "users",
+      "description": "User Management — จัดการข้อมูลผู้ใช้ (CRUD operations)"
+    },
+    {
+      "name": "Inference Channel",
+      "description": "Inference Channel — รับ inference request จาก End user ส่งไปประมวลผลผ่าน AI model"
+    },
+    {
+      "name": "Management Channel",
+      "description": "Management Channel — สำหรับ Admin จัดการระบบ ดู Dashboard และ Deploy/Undeploy models"
+    },
+    {
+      "name": "Job Worker",
+      "description": "Job Worker — จัดการ Training Jobs ส่งผ่าน Redis queue ไปยัง Training Worker"
+    }
+  ]
+}

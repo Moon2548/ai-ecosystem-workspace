@@ -1,0 +1,21 @@
+﻿Method,Path,Summary,Description,Tags,Operation ID,Parameters,Request Body,Response Codes
+POST,/api/auth/login,Login,,auth,login_api_auth_login_post,,LoginRequest,"200, 422"
+GET,/api/auth/me,Get Me,,auth,get_me_api_auth_me_get,,,200
+POST,/api/auth/register,Register,,auth,register_api_auth_register_post,,RegisterRequest,"201, 422"
+GET,/api/inference/health,ตรวจสอบสถานะ Inference Channel,Controller ตรวจสอบสถานะ,Inference Channel,check_health_api_inference_health_get,,,200
+GET,/api/inference/models,แสดงรายการ Models ที่พร้อมใช้งาน,Controller ดึงข้อมูล model ทั้งหมด,Inference Channel,list_models_api_inference_models_get,,,200
+GET,/api/inference/models/{model_name},ดูรายละเอียด Model,Controller ดึงข้อมูล model เฉพาะชื่อ,Inference Channel,get_model_info_api_inference_models__model_name__get,"model_name* (path, string)",,"200, 422"
+POST,/api/inference/predict,ส่งข้อมูลเพื่อ predict,รับข้อมูล input จาก End user ส่งไปประมวลผลผ่าน model ใน Inference Channel,Inference Channel,predict_api_inference_predict_post,,PredictRequest,"200, 422"
+GET,/api/jobs/training,แสดงรายการ Training Jobs ทั้งหมด,,Job Worker,list_jobs_api_jobs_training_get,"page (query, integer); page_size (query, integer)",,"200, 422"
+POST,/api/jobs/training,สร้าง Training Job ใหม่,สร้าง training job และส่งเข้า Redis queue เพื่อให้ Training Worker ประมวลผล,Job Worker,create_training_job_api_jobs_training_post,,TrainingJobRequest,"201, 422"
+DELETE,/api/jobs/training/{job_id},ยกเลิก Training Job,,Job Worker,cancel_job_api_jobs_training__job_id__delete,"job_id* (path, string)",,"200, 422"
+GET,/api/jobs/training/{job_id},ดูสถานะ Training Job,ตรวจสอบสถานะและ progress ของ training job ที่กำลังทำงาน,Job Worker,get_job_status_api_jobs_training__job_id__get,"job_id* (path, string)",,"200, 422"
+GET,/api/management/dashboard,แสดง Dashboard ข้อมูลระบบ,แสดงสถานะภาพรวมของระบบ AI Ecosystem สำหรับ Admin,Management Channel,get_dashboard_api_management_dashboard_get,,,200
+GET,/api/management/models,แสดงรายการ Models ที่จัดการได้,Controller สำหรับแสดงรายการ Models,Management Channel,list_managed_models_api_management_models_get,,,200
+POST,/api/management/models/deploy,Deploy Model เข้าสู่ระบบ,Deploy model ที่เลือกเข้าสู่ระบบ inference สำหรับให้บริการ,Management Channel,deploy_model_api_management_models_deploy_post,,ModelDeployRequest,"201, 422"
+DELETE,/api/management/models/{model_name},ถอด Model ออกจากระบบ,Controller สำหรับ Undeploy Model,Management Channel,undeploy_model_api_management_models__model_name__delete,"model_name* (path, string)",,"200, 422"
+GET,/api/users,Get All Users,,users,get_all_users_api_users_get,,,200
+DELETE,/api/users/{user_id},Delete User,,users,delete_user_api_users__user_id__delete,"user_id* (path, integer)",,"200, 422"
+GET,/api/users/{user_id},Get User,,users,get_user_api_users__user_id__get,"user_id* (path, integer)",,"200, 422"
+PATCH,/api/users/{user_id},Update User,,users,update_user_api_users__user_id__patch,"user_id* (path, integer)",UpdateUserRequest,"200, 422"
+GET,/health,System Health Check,ตรวจสอบสถานะของ Central API Server,system,health_check_health_get,,,200
