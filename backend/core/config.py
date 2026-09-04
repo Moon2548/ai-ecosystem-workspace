@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     minio_endpoint: str
     minio_access_key: str
     minio_secret_key: str
+    redis_url: str = "redis://localhost:6379"
     jwt_secret_key: str
     jwt_algorithm: str
     access_token_expire_minutes: int

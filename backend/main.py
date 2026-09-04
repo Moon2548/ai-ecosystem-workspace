@@ -35,8 +35,8 @@ tags_metadata = [
         "description": "Management Channel — สำหรับ Admin จัดการระบบ ดู Dashboard และ Deploy/Undeploy models",
     },
     {
-        "name": "Job Worker",
-        "description": "Job Worker — จัดการ Training Jobs ส่งผ่าน Redis queue ไปยัง Training Worker",
+        "name": "Training (Model Fine-tuning)",
+        "description": "Training — จัดการ Training Jobs ผ่าน ARQ (Async Redis Queue) ไปยัง Trainer Worker",
     },
 ]
 
