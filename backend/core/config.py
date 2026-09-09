@@ -22,4 +22,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str
     access_token_expire_minutes: int
 
+    # MLflow Tracking Server
+    mlflow_tracking_uri: str = "http://localhost:5000"
+
 settings = Settings()

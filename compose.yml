@@ -108,6 +108,7 @@ services:
       - JWT_SECRET_KEY=change-this-secret-before-production
       - JWT_ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=60
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
     depends_on:
       redis:
         condition: service_healthy
@@ -116,6 +117,7 @@ services:
       postgres:
         condition: service_started
     command: uv run uvicorn main:app --host 0.0.0.0 --port 8000
+
     logging:
       driver: json-file
       options:
@@ -144,12 +146,85 @@ services:
       - JWT_SECRET_KEY=change-this-secret-before-production
       - JWT_ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=60
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
     depends_on:
       redis:
         condition: service_healthy
       minio:
         condition: service_healthy
     command: uv run arq core.worker_settings.WorkerSettings
+    # หมายเหตุ: สำหรับการใช้งาน GPU ให้เปิด deploy section ด้านล่าง
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 6. MLflow — Experiment Tracking & Model Registry
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.14.1
+    container_name: mlflow
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=postgresql://myuser:mypassword@postgres:5432/labelstudio
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=s3://mlflow/
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin123
+    depends_on:
+      postgres:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    # ติดตั้ง psycopg2-binary และ boto3 ก่อน start server
+    # (mlflow image ไม่มี psycopg2, boto3, และ curl ติดมาด้วย)
+    entrypoint: ["/bin/bash", "-c", "pip install --quiet psycopg2-binary boto3 && mlflow server --backend-store-uri postgresql://myuser:mypassword@postgres:5432/labelstudio --default-artifact-root s3://mlflow/ --host 0.0.0.0 --port 5000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 7. Inference Worker — โหลดโมเดลจาก MLflow แล้วรัน inference ผ่าน Redis ARQ
+  inference-worker:
+    build:
+      context: ./inference-worker
+      dockerfile: Dockerfile
+    container_name: inference-worker
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin123
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MODEL_NAME=bert-base-ner
+      - MODEL_STAGE=Production
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      redis:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    command: uv run python main.py
     # หมายเหตุ: สำหรับการใช้งาน GPU ให้เปิด deploy section ด้านล่าง
     # deploy:
     #   resources:
