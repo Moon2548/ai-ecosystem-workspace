@@ -62,7 +62,20 @@ docker compose up -d
 - **MinIO**: API `localhost:9000`, Console `localhost:9001`
 - **Label Studio**: `localhost:8080`
 
-### 2. เริ่ม Backend Server
+### 2. เริ่ม Observability Stack (Assignment 9)
+
+```bash
+docker compose -f compose.yml -f compose.observability.yml up -d
+```
+
+จะเริ่ม Observability services เพิ่มเติม:
+- **OpenTelemetry Collector**: OTLP gRPC `4317`, HTTP `4318`, Prometheus exporter `8889`
+- **Prometheus**: `http://localhost:9090` (เก็บ Metrics แบบ time-series)
+- **Loki**: `http://localhost:3100` (จัดเก็บ Logs จากทุก Component)
+- **Tempo**: `http://localhost:3200` (จัดเก็บ Distributed Tracing)
+- **Grafana**: `http://localhost:3000` (Unified Dashboard, user: `admin`, pass: `admin`)
+
+### 3. เริ่ม Backend Server
 
 ```bash
 cd backend
@@ -70,11 +83,11 @@ uv sync
 uv run uvicorn main:app --reload
 ```
 
-### 3. เข้าถึง API Documentation
+### 4. เข้าถึง API Documentation & Observability UIs
 
 - **Swagger UI**: http://localhost:8000/
-- **ReDoc**: http://localhost:8000/redoc
-- **OpenAPI JSON**: http://localhost:8000/openapi.json
+- **Grafana Dashboard**: http://localhost:3000/
+- **Prometheus Targets & Graph**: http://localhost:9090/
 
 ## รูปแบบสถาปัตยกรรม: Feature-Driven Modular Architecture
 

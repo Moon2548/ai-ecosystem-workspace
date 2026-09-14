@@ -1,4 +1,4 @@
-﻿"""
+"""
 Inference Service — Business Logic สำหรับ Inference Channel
 
 ทำงานร่วมกับ:
@@ -12,6 +12,8 @@ import logging
 import os
 import uuid
 from typing import Optional
+
+from core.observability import inject_trace_context
 
 import redis.asyncio as aioredis
 from arq import create_pool
@@ -52,6 +54,10 @@ class InferenceService:
             AsyncPredictResponse ที่มี job_id สำหรับ poll ผลภายหลัง
         """
         job_id = str(uuid.uuid4())
+        # ── Propagate OpenTelemetry trace context across Redis ──
+        trace_carrier: dict[str, str] = {}
+        inject_trace_context(trace_carrier)
+
         pool = await create_pool(_get_redis_settings())
         try:
             await pool.enqueue_job(
@@ -62,6 +68,7 @@ class InferenceService:
                 model_stage=request.model_stage or "Production",
                 parameters=request.parameters,
                 _job_id=job_id,  # ใช้ job_id เดียวกันใน ARQ
+                _trace_carrier=trace_carrier,
             )
             logger.info(f"Inference job enqueued: {job_id}")
             return AsyncPredictResponse(

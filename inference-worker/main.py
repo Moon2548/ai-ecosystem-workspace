@@ -1,4 +1,4 @@
-﻿"""
+"""
 Inference Worker — Entry Point
 
 รัน ARQ worker ที่รับ inference jobs จาก Redis queue
@@ -13,6 +13,7 @@ import logging
 import os
 
 from arq import run_worker
+from core.observability import setup_observability
 from worker.settings import WorkerSettings
 
 # ตั้งค่า logging
@@ -33,6 +34,7 @@ def main():
     logger.info(f"  Stage     : {os.environ.get('MODEL_STAGE', 'Production')}")
     logger.info("=" * 60)
 
+    setup_observability(service_name="ai-ecosystem-inference-worker")
     run_worker(WorkerSettings)
 
 

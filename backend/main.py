@@ -8,7 +8,11 @@ from api.inference.router import router as inference_router
 from api.management.router import router as management_router
 from api.jobs.router import router as jobs_router
 from core.config import settings
+from core.observability import setup_observability, instrument_fastapi
 from db.database import create_database_schema
+
+# ── Initialize OpenTelemetry Observability (Traces, Metrics, Logs) ──
+setup_observability(service_name="ai-ecosystem-backend")
 
 
 # Tags metadata สำหรับ Swagger UI documentation
@@ -76,6 +80,9 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/",
 )
+
+# ── Instrument FastAPI with OpenTelemetry ──
+instrument_fastapi(app)
 
 # Register all feature routers
 app.include_router(auth_router, prefix="/api")

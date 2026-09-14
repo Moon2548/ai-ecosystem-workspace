@@ -1,4 +1,4 @@
-﻿"""
+"""
 Inference Tasks — ARQ job functions สำหรับ Inference Worker
 
 Job: run_inference
@@ -15,9 +15,15 @@ import time
 import uuid
 from typing import Any
 
+from core.observability import (
+    extract_trace_context,
+    get_tracer,
+    record_inference_job,
+)
 from worker.model_loader import load_model
 
 logger = logging.getLogger(__name__)
+tracer = get_tracer()
 
 # TTL ผลลัพธ์ใน Redis (วินาที)
 RESULT_TTL_SECONDS = 3600  # 1 ชั่วโมง
@@ -30,6 +36,7 @@ async def run_inference(
     model_name: str = "bert-base-ner",
     model_stage: str = "Production",
     parameters: dict[str, Any] | None = None,
+    _trace_carrier: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """
     ARQ Job Function — รัน NER inference บน input text
@@ -41,69 +48,82 @@ async def run_inference(
         model_name: ชื่อ model ใน MLflow Registry
         model_stage: stage ของ model
         parameters: optional parameters เพิ่มเติม
+        _trace_carrier: OpenTelemetry W3C trace context propagated from API caller
 
     Returns:
         dict ผลลัพธ์ inference พร้อม metadata
     """
     start_time = time.time()
-    logger.info(f"[{job_id}] Starting inference job | model={model_name}:{model_stage}")
+    parent_ctx = extract_trace_context(_trace_carrier)
 
-    redis = ctx["redis"]
+    with tracer.start_as_current_span("run_inference", context=parent_ctx) as span:
+        span.set_attribute("model.name", model_name)
+        span.set_attribute("model.stage", model_stage)
+        span.set_attribute("job.id", str(job_id))
 
-    try:
-        # ---- โหลด Model ----
-        model = load_model(model_name=model_name, stage=model_stage)
+        logger.info(f"[{job_id}] Starting inference job | model={model_name}:{model_stage}")
 
-        # ---- เตรียม Input ----
-        texts = input_data.get("texts") or [input_data.get("text", "")]
-        if not texts or not texts[0]:
-            raise ValueError("input_data ต้องมี key 'text' (str) หรือ 'texts' (list[str])")
+        redis = ctx["redis"]
 
-        logger.info(f"[{job_id}] Running inference on {len(texts)} sample(s)")
+        try:
+            # ---- โหลด Model ----
+            model = load_model(model_name=model_name, stage=model_stage)
 
-        # ---- รัน Inference ----
-        raw_results = model(texts)
+            # ---- เตรียม Input ----
+            texts = input_data.get("texts") or [input_data.get("text", "")]
+            if not texts or not texts[0]:
+                raise ValueError("input_data ต้องมี key 'text' (str) หรือ 'texts' (list[str])")
 
-        # ---- จัดรูปแบบผลลัพธ์ ----
-        # pipeline token-classification คืน list[list[dict]] หรือ list[dict]
-        if isinstance(raw_results[0], dict):
-            # single string input → pipeline คืน list[dict]
-            formatted = [_format_entities(raw_results)]
-        else:
-            # list of strings → pipeline คืน list[list[dict]]
-            formatted = [_format_entities(r) for r in raw_results]
+            logger.info(f"[{job_id}] Running inference on {len(texts)} sample(s)")
 
-        inference_time_ms = round((time.time() - start_time) * 1000, 2)
+            # ---- รัน Inference ----
+            raw_results = model(texts)
 
-        result = {
-            "job_id": job_id,
-            "status": "completed",
-            "model_name": model_name,
-            "model_stage": model_stage,
-            "inference_time_ms": inference_time_ms,
-            "input_count": len(texts),
-            "results": formatted,
-        }
+            # ---- จัดรูปแบบผลลัพธ์ ----
+            # pipeline token-classification คืน list[list[dict]] หรือ list[dict]
+            if isinstance(raw_results[0], dict):
+                # single string input → pipeline คืน list[dict]
+                formatted = [_format_entities(raw_results)]
+            else:
+                # list of strings → pipeline คืน list[list[dict]]
+                formatted = [_format_entities(r) for r in raw_results]
 
-        # ---- เก็บผลใน Redis ----
-        result_key = f"inference:result:{job_id}"
-        await redis.setex(result_key, RESULT_TTL_SECONDS, json.dumps(result))
-        logger.info(f"[{job_id}] Inference completed in {inference_time_ms}ms → saved to Redis")
+            duration = time.time() - start_time
+            inference_time_ms = round(duration * 1000, 2)
+            record_inference_job(model_name, "success", duration)
 
-        return result
+            result = {
+                "job_id": job_id,
+                "status": "completed",
+                "model_name": model_name,
+                "model_stage": model_stage,
+                "inference_time_ms": inference_time_ms,
+                "input_count": len(texts),
+                "results": formatted,
+            }
 
-    except Exception as e:
-        error_result = {
-            "job_id": job_id,
-            "status": "failed",
-            "error": str(e),
-            "model_name": model_name,
-        }
-        # เก็บ error ใน Redis ด้วย
-        result_key = f"inference:result:{job_id}"
-        await redis.setex(result_key, RESULT_TTL_SECONDS, json.dumps(error_result))
-        logger.error(f"[{job_id}] Inference failed: {e}")
-        raise
+            # ---- เก็บผลใน Redis ----
+            result_key = f"inference:result:{job_id}"
+            await redis.setex(result_key, RESULT_TTL_SECONDS, json.dumps(result))
+            logger.info(f"[{job_id}] Inference completed in {inference_time_ms}ms → saved to Redis")
+
+            return result
+
+        except Exception as e:
+            duration = time.time() - start_time
+            record_inference_job(model_name, "failed", duration)
+            span.record_exception(e)
+            error_result = {
+                "job_id": job_id,
+                "status": "failed",
+                "error": str(e),
+                "model_name": model_name,
+            }
+            # เก็บ error ใน Redis ด้วย
+            result_key = f"inference:result:{job_id}"
+            await redis.setex(result_key, RESULT_TTL_SECONDS, json.dumps(error_result))
+            logger.error(f"[{job_id}] Inference failed: {e}")
+            raise
 
 
 def _format_entities(entities: list[dict]) -> list[dict]:

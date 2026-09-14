@@ -1,4 +1,4 @@
-﻿[project]
+[project]
 name = "inference-worker"
 version = "0.1.0"
 description = "Inference Worker — โหลดโมเดลจาก MLflow แล้วรัน inference ผ่าน ARQ (Redis Queue)"
@@ -13,6 +13,11 @@ dependencies = [
     "minio>=7.2.0",
     "pydantic-settings>=2.6.0",
     "boto3>=1.34.0",
+    "opentelemetry-api>=1.25.0",
+    "opentelemetry-sdk>=1.25.0",
+    "opentelemetry-exporter-otlp>=1.25.0",
+    "opentelemetry-instrumentation-redis>=0.46b0",
+    "opentelemetry-instrumentation-logging>=0.46b0",
 ]
 
 [tool.uv.sources]
